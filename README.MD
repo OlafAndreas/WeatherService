@@ -4,6 +4,9 @@
 Example API Url: [http://www.yr.no/sted/Norge/Trøndelag/Verdal/Verdal/varsel.xml](http://www.yr.no/sted/Norge/Tr%C3%B8ndelag/Verdal/Verdal/varsel.xml)
 
 ## Installation
+
+For instructions on installation of Go, please refer to [https://golang.org/dl/](https://golang.org/dl/).
+
 Install these two packages
 ```
 go get github.com/mattn/go-sqlite3
