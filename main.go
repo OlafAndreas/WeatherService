@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"fmt"
 	"log"
 	"time"
 	"strings"
@@ -15,27 +16,49 @@ func main() {
 
 	setupCacheStorage()
 
-	get("/Trøndelag/Stjørdal/Stjørdal") // Fetched from server
-	get("/Trøndelag/Stjørdal/Stjørdal") // Fetched from cache
+	http.HandleFunc("/", api)
+	logError(http.ListenAndServe(":8080", nil))
+}
 
-	get("/Trøndelag/Verdal/Verdal")	// Fetched from server
-	get("/Trøndelag/Verdal/Verdal") // Fetched from cache
+func api(w http.ResponseWriter, r *http.Request) {
+
+	if path := r.URL.String(); path != "/favicon.ico" {
+
+		// Split the string so we can retrieve the format in the last component
+		components := strings.Split(path, ".")
+
+		// Retrieve the format,
+		// this will be used to transform the responses from YR.
+		format := components[len(components)-1]
+
+		w.Header().Set("Content-Type", "application/" + format)
+
+		fmt.Fprintf(w, get(path, format))
+	}
 }
 
 func print(text string) {
 	log.Printf(text)
 }
 
-func get(relativeUrl string) string {
+func get(relativeUrl string, format string) string {
 
-	url := "http://www.yr.no/sted/Norge"+relativeUrl+"/varsel.xml"
+	// All urls should be in lowercase,
+	// this is to prevent redundancy in the cache DB.
+	lowercased := strings.ToLower(relativeUrl)
+
+	// Removing the user defined format in URL.
+	// All requests to YR should be appended with xml.
+	trimmed := strings.Trim(lowercased, format)
+
+	url := "http://www.yr.no" + trimmed + "xml"
 
 	// Checking the cache for a response added in the last 10 minutes.
 	cachedResponse := getCachedResponse(url, 10)
 
 	if len(cachedResponse) > 0 {
 		print("Return cached response for: " + url)
-		return cachedResponse
+		return formattedResponse(cachedResponse, format)
 	}
 
 	resp, error := http.Get(url)
@@ -45,12 +68,21 @@ func get(relativeUrl string) string {
 	body, error := ioutil.ReadAll(resp.Body)
 	logError(error)
 
-	json := xmlToJSON(string(body))
+	xml := string(body)
 
 	// Here we should cache the data
-	cacheResponse(url, json)
+	cacheResponse(url, xml)
 
-	return json
+	return formattedResponse(xml, format)
+}
+
+func formattedResponse(resp string, format string) string {
+
+	if format == "json" {
+		return xmlToJSON(resp)
+	}
+
+	return resp
 }
 
 func xmlToJSON(rawXml string) string {
@@ -100,7 +132,7 @@ func removeOldCache(url string) {
 
 	result, execError := statement.Exec(url)
 	logError(execError)
-	
+
 
 	_, affectedError := result.RowsAffected()
 	logError(affectedError)
@@ -108,7 +140,7 @@ func removeOldCache(url string) {
 
 // maxAge is measured in seconds
 func getCachedResponse(url string, maxAge float64) string {
-	print("Check for cached response for: " + url)
+	print("Check cache for: " + url)
 	rows, queryError := database().Query("SELECT json, timestamp FROM cachedresponses WHERE url=?", url)
 	logError(queryError)
 
