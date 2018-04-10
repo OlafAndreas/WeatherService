@@ -10,6 +10,7 @@ import (
 	xj "github.com/oisann/goxml2json"
 	_ "github.com/mattn/go-sqlite3"
 	"database/sql"
+	"encoding/json"
 )
 
 func main() {
@@ -53,8 +54,8 @@ func get(relativeUrl string, format string) string {
 
 	url := "https://www.yr.no" + trimmed + "xml"
 
-	// Checking the cache for a response added in the last 10 minutes.
-	cachedResponse := getCachedResponse(url, 10)
+	// Checking the cache for a response
+	cachedResponse := getCachedResponse(url)
 
 	if len(cachedResponse) > 0 {
 		print("Return cached response for: " + url)
@@ -96,7 +97,7 @@ func xmlToJSON(rawXml string) string {
 
 func logError(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }
 
@@ -110,18 +111,39 @@ func database() *sql.DB {
 
 func setupCacheStorage() {
 
-	statement, _ := database().Prepare("CREATE TABLE IF NOT EXISTS cachedresponses (id INTEGER PRIMARY KEY, url TEXT, json TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)")
+	statement, _ := database().Prepare("CREATE TABLE IF NOT EXISTS cachedresponses (id INTEGER PRIMARY KEY, url TEXT, json TEXT, nextupdate DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL)")
 
 	_, error := statement.Exec()
 	logError(error)
 }
 
-func cacheResponse(url string, json string) {
+func cacheResponse(url string, xml string) {
 	print("Cache response for: " + url)
-	statement, prepError := database().Prepare("INSERT INTO cachedresponses (url, json) VALUES (?, ?)")
+
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(xmlToJSON(xml)), &data)
+	logError(err)
+
+	weatherdata, ok := data["weatherdata"].(map[string]interface{})
+
+	if !ok {
+		print("Failed to get weatherdata for caching.")
+	}
+
+	meta, ok := weatherdata["meta"].(map[string]interface{})
+	if !ok {
+		print("Failed to get meta data for caching.")
+	}
+
+	nextupdate, ok := meta["nextupdate"]
+	if !ok {
+		print("Failed to get nextUpdate from meta data for caching.")
+	}
+
+	statement, prepError := database().Prepare("INSERT INTO cachedresponses (url, json, nextupdate) VALUES (?, ?, ?)")
 	logError(prepError)
 
-	_, execError := statement.Exec(url, json)
+	_, execError := statement.Exec(url, xml, nextupdate)
 	logError(execError)
 }
 
@@ -139,23 +161,23 @@ func removeOldCache(url string) {
 }
 
 // maxAge is measured in minutes
-func getCachedResponse(url string, maxAge float64) string {
+func getCachedResponse(url string) string {
 	print("Check cache for: " + url)
-	rows, queryError := database().Query("SELECT json, timestamp FROM cachedresponses WHERE url=?", url)
+	rows, queryError := database().Query("SELECT json, nextupdate FROM cachedresponses WHERE url=?", url)
 	logError(queryError)
 
 	defer rows.Close()
 
 	var json string
-	var timestamp time.Time
+	var nextupdate time.Time
 	for rows.Next() {
-		scanError := rows.Scan(&json, &timestamp)
+		scanError := rows.Scan(&json, &nextupdate)
 		logError(scanError)
 	}
 
 	logError(rows.Err())
 
-	if time.Since(timestamp).Minutes() > maxAge {
+	if time.Since(nextupdate).Minutes() >= 0 {
 		removeOldCache(url)
 		return ""
 	}
