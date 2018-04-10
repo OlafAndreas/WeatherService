@@ -10,7 +10,7 @@ For instructions on installation of Go, please refer to [https://golang.org/dl/]
 Install these two packages
 ```
 go get github.com/mattn/go-sqlite3
-go get -u github.com/oisann/goxml2json
+go get github.com/oisann/goxml2json
 ```
 
 ## Build & Run
