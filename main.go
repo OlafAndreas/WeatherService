@@ -51,7 +51,7 @@ func get(relativeUrl string, format string) string {
 	// All requests to YR should be appended with xml.
 	trimmed := strings.Trim(lowercased, format)
 
-	url := "http://www.yr.no" + trimmed + "xml"
+	url := "https://www.yr.no" + trimmed + "xml"
 
 	// Checking the cache for a response added in the last 10 minutes.
 	cachedResponse := getCachedResponse(url, 10)
@@ -138,7 +138,7 @@ func removeOldCache(url string) {
 	logError(affectedError)
 }
 
-// maxAge is measured in seconds
+// maxAge is measured in minutes
 func getCachedResponse(url string, maxAge float64) string {
 	print("Check cache for: " + url)
 	rows, queryError := database().Query("SELECT json, timestamp FROM cachedresponses WHERE url=?", url)
