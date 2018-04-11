@@ -22,7 +22,7 @@ func main() {
 }
 
 func api(w http.ResponseWriter, r *http.Request) {
-
+	
 	if path := r.URL.String(); path != "/favicon.ico" {
 
 		// Split the string so we can retrieve the format in the last component
@@ -115,6 +115,37 @@ func setupCacheStorage() {
 
 	_, error := statement.Exec()
 	logError(error)
+
+	go purgeCache()
+}
+
+// This function will purge the cache DB for expired caches every 5 minutes, 
+// this is to prevent expires caches piling up after not being accessed.
+func purgeCache() {
+
+	c := time.Tick(5 * time.Minute)
+
+	for now := range c {
+
+		statement, purgeError := database().Prepare("DELETE FROM cachedresponses WHERE nextupdate<=?")
+		logError(purgeError)
+
+		result, execError := statement.Exec(time.Now().Format(time.RFC3339))
+		logError(execError)
+
+		affected, affectedError := result.RowsAffected()
+		logError(affectedError)
+
+		if execError == nil {
+			if affected > 0 {
+				print("Purged " + string(affected) + " cached responses.")
+			} else {
+				print("No purging required")
+			}
+		} else {
+			print("Failed to purge cache("+ now.String() +").")
+		}
+	}
 }
 
 func cacheResponse(url string, xml string) {
@@ -154,7 +185,6 @@ func removeOldCache(url string) {
 
 	result, execError := statement.Exec(url)
 	logError(execError)
-
 
 	_, affectedError := result.RowsAffected()
 	logError(affectedError)
