@@ -103,7 +103,7 @@ func logError(err error) {
 
 func database() *sql.DB {
 
-	database, error := sql.Open("sqlite3", "./yrservicecache.db")
+	database, error := sql.Open("sqlite3", "./weathercache.db")
 	logError(error)
 
 	return database
