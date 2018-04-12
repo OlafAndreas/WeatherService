@@ -17,7 +17,7 @@ go get github.com/oisann/goxml2json
 ```
 go build
 
-./YRService // Starts a web service on port 8080 by default
+./WeatherService // Starts a web service on port 8080 by default
 ```
 
 ## Usage
@@ -31,7 +31,7 @@ Retrieve data as JSON:
 http://127.0.0.1:8080/sted/norge/trøndelag/verdal/vinne/varsel.JSON
 ```
 
-Both responses would be cached using `http://127.0.0.1:8080/sted/norge/oslo/oslo/kjelsås/varsel.` as the key, only the first response will be cached and returned in the specific format for the rest of the cache lifetime(10 minutes).
+Both responses would be cached using `http://127.0.0.1:8080/sted/norge/oslo/oslo/kjelsås/varsel.` as the key, only the first response will be fetched from the yr api and cached, any requests on the same url will return the cached response in the specific format. The cache database is purged every 5 minutes to remove any expired caches.
 
 #### Practical information
 This application was built using `go1.10.1 darwin/amd64`
