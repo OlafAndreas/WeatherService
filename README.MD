@@ -7,10 +7,11 @@ Example API Url: [http://www.yr.no/sted/Norge/Trøndelag/Verdal/Verdal/varsel.xm
 
 For instructions on installation of Go, please refer to [https://golang.org/dl/](https://golang.org/dl/).
 
-Install these two packages
+Installing dependencies using [dep](https://github.com/golang/dep).
+The following command will take care of installing any dependencies required
+by the WeatherService app.
 ```
-go get github.com/mattn/go-sqlite3
-go get github.com/oisann/goxml2json
+dep ensure
 ```
 
 ## Build & Run
