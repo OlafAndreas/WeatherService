@@ -22,7 +22,7 @@ func main() {
 }
 
 func api(w http.ResponseWriter, r *http.Request) {
-	
+
 	if path := r.URL.String(); path != "/favicon.ico" {
 
 		// Split the string so we can retrieve the format in the last component
@@ -119,7 +119,7 @@ func setupCacheStorage() {
 	go purgeCache()
 }
 
-// This function will purge the cache DB for expired caches every 5 minutes, 
+// This function will purge the cache DB for expired caches every 5 minutes,
 // this is to prevent expires caches piling up after not being accessed.
 func purgeCache() {
 
