@@ -9,8 +9,8 @@ For instructions on installation of Go, please refer to [https://golang.org/dl/]
 
 ##### Install dependencies
 
-###### Using dep
-This project uses dep, the prototype dependency manager for Go.
+###### Using `dep`
+This project uses `dep`, the prototype dependency manager for Go.
 Please refer to [https://github.com/golang/dep](https://github.com/golang/dep) for installation.
 
 Run the following command inside the WeatherService directory to install the dependencies.
@@ -22,7 +22,7 @@ And you're good to go! :)
 #### or
 
 ###### Using `go get`
-Packages can be insatlled manually by running the following commands, I recommend using dep since these commands will install the latest packages available, which might not work in the future.
+Packages can be installed manually by running the following commands, I recommend using `dep` since these commands will install the latest packages available, which might not work in the future.
 ```
 go get github.com/mattn/go-sqlite3
 go get github.com/oisann/goxml2json
